@@ -13,7 +13,7 @@ def click_event(event, x, y, flags, param):
             height = abs(ref_point[1][1] - ref_point[0][1])
             print(f"\nEstimated Dimensions:\nWidth = {width} px, Height = {height} px\n")
 
-img = cv2.imread('parking.png')  # Make sure this matches your current reference image
+img = cv2.imread('carPark.png')  # Make sure this matches your current reference image
 cv2.imshow("Click Two Opposite Corners of a Space", img)
 cv2.setMouseCallback("Click Two Opposite Corners of a Space", click_event)
 

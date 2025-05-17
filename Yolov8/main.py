@@ -1,68 +1,85 @@
 import cv2
 import pickle
-import logging
+import numpy as np
 from ultralytics import YOLO
-from utils import check_overlap  # Assumes this returns True if boxes overlap
-from configs import *
 
-logging.getLogger().setLevel(logging.ERROR)
+# Load YOLOv8n model (make sure yolov8n.pt is available)
+model = YOLO('yolov8n.pt')  # or provide absolute path
 
-with open(PARK_POSITIONS_FILE, "rb") as f:
+# Load pre-saved parking positions (list of (x, y) tuples)
+with open('carpark_positions', 'rb') as f:
     park_positions = pickle.load(f)
 
-model = YOLO(MODEL_PATH)
+# Parking spot dimensions (must match the original saved setup)
+SPOT_WIDTH, SPOT_HEIGHT = 107, 45
+FULL_PIXEL_COUNT = SPOT_WIDTH * SPOT_HEIGHT
+THRESHOLD_RATIO = 0.15  # Adjustable
 
-cap = cv2.VideoCapture(VIDEO_PATH)
-if not cap.isOpened():
-    raise IOError(f"Failed to open video file: {VIDEO_PATH}")
+# Class ID for car in COCO dataset used by YOLO
+CAR_CLASS_ID = 2  # 2 corresponds to 'car' in COCO
 
-frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# Initialize video
+cap = cv2.VideoCapture('data/carPark.mp4')
+font = cv2.FONT_HERSHEY_SIMPLEX
 
 while cap.isOpened():
-    success, frame = cap.read()
-    if not success:
+    ret, frame = cap.read()
+    if not ret:
         break
 
-    # Run YOLO inference
-    results = model(frame, imgsz=480, verbose=False)[0]
+    overlay = frame.copy()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (3, 3), 1)
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY_INV, 25, 16)
 
-    # Extract car boxes only
+    # Run YOLO inference
+    results = model(frame, conf=0.3, iou=0.4, verbose=False)[0]
+
     car_boxes = [
-        box.xyxy[0].tolist()
+        box.xyxy[0].cpu().numpy().astype(int)
         for box in results.boxes
         if int(box.cls[0]) == CAR_CLASS_ID
     ]
 
-    # Initialize counter for free spaces
     free_count = 0
 
-    # Check each parking spot
-    for x, y in park_positions:
+    for (x, y) in park_positions:
         x2, y2 = x + SPOT_WIDTH, y + SPOT_HEIGHT
-        park_rect = (x, y, x2, y2)
+        parking_crop = thresh[y:y2, x:x2]
 
-        occupied = any(check_overlap(park_rect, car_box) for car_box in car_boxes)
-        color = (0, 0, 255) if occupied else (0, 255, 0)
+        pixel_count = cv2.countNonZero(parking_crop)
+        ratio = pixel_count / FULL_PIXEL_COUNT
 
-        if not occupied:
+        # Check for overlap with YOLO-detected car boxes
+        occupied_by_detection = False
+        for box in car_boxes:
+            bx1, by1, bx2, by2 = box
+            if bx2 > x and bx1 < x2 and by2 > y and by1 < y2:
+                occupied_by_detection = True
+                break
+
+        # Combine both logic options (you can choose to use only one)
+        is_occupied = (ratio > THRESHOLD_RATIO) or occupied_by_detection
+
+        color = (0, 0, 255) if is_occupied else (0, 255, 0)
+        if not is_occupied:
             free_count += 1
 
-        # Draw rectangle on the frame
-        cv2.rectangle(frame, (x, y), (x2, y2), color, 2)
+        cv2.rectangle(overlay, (x, y), (x2, y2), color, 2)
+        cv2.putText(overlay, f"{ratio:.2f}", (x + 2, y + SPOT_HEIGHT - 5),
+                    font, 0.6, (255, 255, 255), 1)
 
-    # Overlay counter
-    cv2.putText(
-        frame, f"{free_count}/{len(park_positions)} Free",
-        (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3
-    )
+    # Show count
+    cv2.rectangle(overlay, (0, 0), (250, 60), (128, 0, 255), -1)
+    cv2.putText(overlay, f"{free_count}/{len(park_positions)} Free",
+                (10, 40), font, 1.2, (255, 255, 255), 2)
 
-    # Show frame
-    cv2.namedWindow("YOLO Parking Detection", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("YOLO Parking Detection", frame_width, frame_height)
-    cv2.imshow("YOLO Parking Detection", frame)
+    cv2.namedWindow('YOLOv8 + Threshold Parking Detection', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('YOLOv8 + Threshold Parking Detection', 1280, 720)
+    cv2.imshow('YOLOv8 + Threshold Parking Detection', overlay)
 
-    if cv2.waitKey(1) & 0xFF == 27:  # ESC to quit
+    if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cap.release()
