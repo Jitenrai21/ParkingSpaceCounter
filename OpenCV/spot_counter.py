@@ -1,23 +1,22 @@
 import cv2
 import pickle
 
-# cap = cv2.VideoCapture('data/carPark.mp4')
-cap = cv2.VideoCapture('data/parking.mp4')
+cap = cv2.VideoCapture('data/carPark.mp4')
+# cap = cv2.VideoCapture('data/parking.mp4')
 
 
-# with open('carpark_positions', 'rb') as f:
-#     park_positions = pickle.load(f)
-with open('park_positions', 'rb') as f:
+with open('carpark_positions', 'rb') as f:
     park_positions = pickle.load(f)
+# with open('park_positions', 'rb') as f:
+#     park_positions = pickle.load(f)
 
-font = cv2.FONT_HERSHEY_COMPLEX_SMALL
+font = cv2.FONT_HERSHEY_COMPLEX_SMALL #font style for displaying text over video
 
 # Parking space parameters
-# width, height = 107, 45
-width, height = 134, 60
+width, height = 107, 45
+# width, height = 134, 60
 full = width * height
-empty = 0.15
-
+empty = 0.15 #ratio threshold, non-zero pixels ( white pixels in binary image) are more than 85%, it's considered packed.
 
 def parking_space_counter(img_processed):
     global counter
@@ -38,7 +37,7 @@ def parking_space_counter(img_processed):
         else:
             color = (0, 0, 255)
 
-        cv2.rectangle(overlay, position, (position[0] + width, position[1] + height), color, -1)
+        cv2.rectangle(overlay, position, (position[0] + width, position[1] + height), color, 2)
         cv2.putText(overlay, "{:.2f}".format(ratio), (x + 4, y + height - 4), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
 
 
@@ -51,7 +50,7 @@ while True:
     _, frame = cap.read()
     overlay = frame.copy()
 
-    # Frame processing
+    # Frame processing for better object-background contrast
     img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     img_blur = cv2.GaussianBlur(img_gray, (3, 3), 1)
     img_thresh = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 16)
@@ -59,7 +58,7 @@ while True:
     parking_space_counter(img_thresh)
 
     alpha = 0.7
-    frame_new = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
+    frame_new = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0) #transparent overlay, which is easier to read, less visually cluttered
 
     w, h = 220, 60
     cv2.rectangle(frame_new, (0, 0), (w, h), (255, 0, 255), -1)

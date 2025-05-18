@@ -2,14 +2,14 @@ import cv2
 import pickle
 from math import sqrt
 
-# width, height = 134, 60
-width, height = 107, 45
+width, height = 134, 60
+# width, height = 107, 45
 
 pt1_x, pt1_y, pt2_x, pt2_y = None, None, None, None
 line_count = 0
 
 try:
-    with open('carpark_positions', 'rb') as f: # binary serialized format contains a list of tuples with each tuple representing the top-left corner
+    with open('park_positions', 'rb') as f: # binary serialized format contains a list of tuples with each tuple representing the top-left corner
         park_positions = pickle.load(f)
 except:
     park_positions = []
@@ -42,13 +42,13 @@ def mouse_events(event, x, y, flag, param):
             if x1 < x < x1 + width and y1 < y < y1 + height:
                 park_positions.pop(i)
 
-    with open('carpark_positions', 'wb') as f:
+    with open('park_positions', 'wb') as f:
         pickle.dump(park_positions, f)
 
 
 while True:
 
-    img = cv2.imread('data/carPark.png')
+    img = cv2.imread('data/parking.png')
 
     for position in park_positions:
         cv2.rectangle(img, position, (position[0] + width, position[1] + height), (255, 0, 255), 3)

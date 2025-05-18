@@ -3,8 +3,8 @@ import pickle
 import numpy as np
 from ultralytics import YOLO
 
-# Load YOLOv8n model (make sure yolov8n.pt is available)
-model = YOLO('yolov8n.pt')  # or provide absolute path
+# Load YOLOv8n model 
+model = YOLO('yolov8n.pt') 
 
 # Load pre-saved parking positions (list of (x, y) tuples)
 with open('carpark_positions', 'rb') as f:
@@ -36,14 +36,13 @@ while cap.isOpened():
     # Run YOLO inference
     results = model(frame, conf=0.3, iou=0.4, verbose=False)[0]
 
+    # Filters out only car detections
     car_boxes = [
         box.xyxy[0].cpu().numpy().astype(int)
         for box in results.boxes
         if int(box.cls[0]) == CAR_CLASS_ID
     ]
-
     free_count = 0
-
     for (x, y) in park_positions:
         x2, y2 = x + SPOT_WIDTH, y + SPOT_HEIGHT
         parking_crop = thresh[y:y2, x:x2]
@@ -61,7 +60,7 @@ while cap.isOpened():
 
         # Combine both logic options (you can choose to use only one)
         is_occupied = (ratio > THRESHOLD_RATIO) or occupied_by_detection
-
+        
         color = (0, 0, 255) if is_occupied else (0, 255, 0)
         if not is_occupied:
             free_count += 1
@@ -72,7 +71,7 @@ while cap.isOpened():
 
     # Show count
     cv2.rectangle(overlay, (0, 0), (250, 60), (128, 0, 255), -1)
-    cv2.putText(overlay, f"{free_count}/{len(park_positions)} Free",
+    cv2.putText(overlay, f"Available: {free_count}/{len(park_positions)} spots",
                 (10, 40), font, 1.2, (255, 255, 255), 2)
 
     cv2.namedWindow('YOLOv8 + Threshold Parking Detection', cv2.WINDOW_NORMAL)
