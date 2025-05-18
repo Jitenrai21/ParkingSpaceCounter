@@ -1,16 +1,20 @@
 import cv2
 import pickle
 
-cap = cv2.VideoCapture('data/carPark.mp4')
+# cap = cv2.VideoCapture('data/carPark.mp4')
+cap = cv2.VideoCapture('data/parking.mp4')
 
-with open('carpark_positions', 'rb') as f:
+
+# with open('carpark_positions', 'rb') as f:
+#     park_positions = pickle.load(f)
+with open('park_positions', 'rb') as f:
     park_positions = pickle.load(f)
 
 font = cv2.FONT_HERSHEY_COMPLEX_SMALL
 
 # Parking space parameters
-# width, height = 134, 60
-width, height = 107, 45
+# width, height = 107, 45
+width, height = 134, 60
 full = width * height
 empty = 0.15
 

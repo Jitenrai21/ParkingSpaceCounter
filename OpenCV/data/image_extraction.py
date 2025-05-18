@@ -1,6 +1,5 @@
 import cv2
 
-# cap = cv2.VideoCapture('parking.mp4')
 cap = cv2.VideoCapture('carPark.mp4')
 
 ret, frame = cap.read()
