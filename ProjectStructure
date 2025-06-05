@@ -1,0 +1,44 @@
+EyeTrackingApp/
+│
+├── OpenCV/
+│       ├── data/
+│       │     ├── image_extraction.py
+│       │     ├── measure_pixels.py         
+│       │     ├── parking.mp4   
+│       │     ├── carPark.mp4 
+│       │     ├── carPark.png   
+│       │     └── parking.png       
+│       ├── carPark_positions.pkl 
+│       ├── park_positions.pkl  
+│       ├── spot_counter.py     
+│       └── spot_picker.py    
+│
+├── FlexibleSpotPick/
+│       ├── data/
+│       │     ├── image_extraction.py         
+│       │     ├── parking.mp4     
+│       │     └── parking.png       
+│       ├── polygon_spots.pkl  
+│       ├── spot_counter.py     
+│       ├── spot_picker.py    
+│       └── yolov8n.pt    
+│
+├── Optimization/
+│   ├── main.py        
+│   ├── mask.png           
+│   ├── model.p 
+│   ├── parking.mp4   
+│   └── test_wink.py   
+│          
+├── Yolov8/
+│       ├── data/
+│       │     ├── image_extraction.py
+│       │     ├── measure_pixels.py         
+│       │     ├── carPark.mp4 
+│       │     └── carPark.png       
+│       ├── carPark_positions.pkl 
+│       ├── main.py     
+│       └── yolov8n.pt               
+│
+├── requirements.txt       
+└── README.md                     
